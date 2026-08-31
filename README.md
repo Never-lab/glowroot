@@ -3,7 +3,11 @@
 [![Latest release](https://img.shields.io/github/v/release/glowroot/glowroot?display_name=tag)](https://github.com/glowroot/glowroot/releases/latest)
 [![Build](https://github.com/glowroot/glowroot/actions/workflows/build.yml/badge.svg)](https://github.com/glowroot/glowroot/actions/workflows/build.yml)
 [![License](https://img.shields.io/github/license/glowroot/glowroot)](https://github.com/glowroot/glowroot/blob/main/LICENSE)
-[![Java](https://img.shields.io/badge/Java-8%2B%20agent%20%7C%2017%2B%20central-blue)](https://github.com/glowroot/glowroot#requirements)
+[![Java](https://img.shields.io/badge/Java-8%2B%20agent%20%7C%2017%2B%20central-blue)](https://github.com/glowroot/glowroot#requirements)  
+[![GitHub stars](https://img.shields.io/github/stars/glowroot/glowroot)](https://github.com/glowroot/glowroot/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/glowroot/glowroot)](https://github.com/glowroot/glowroot/network/members)
+[![Contributors](https://img.shields.io/github/contributors/glowroot/glowroot)](https://github.com/glowroot/glowroot/graphs/contributors)
+[![Discussions](https://img.shields.io/github/discussions/glowroot/glowroot)](https://github.com/glowroot/glowroot/discussions)
 
 **Easy to use, very low overhead, open source Java APM.**
 
@@ -124,10 +128,17 @@ Build instructions, UI sandbox, integration tests, and code-quality checks: **[C
 
 Code orientation (modules, agent data path, embedded vs central in the tree): wiki **[For contributors](https://github.com/glowroot/glowroot/wiki/For-contributors)**.
 
-## Project analytics
+## Star History
 
-Repository trends (stars, commits, issues, PRs, contributors):
-[OSS Insight — glowroot/glowroot](https://ossinsight.io/analyze/glowroot/glowroot#overview)
+<a href="https://star-history.dera.page/?type=date&repos=glowroot%2Fglowroot#glowroot/glowroot&legend=bottom-right">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=glowroot/glowroot&theme=dark&legend=bottom-right" />
+    <source media="(prefers-color-scheme: light)" srcset="https://star-history.dera.page/svg?repos=glowroot/glowroot&legend=bottom-right" />
+    <img alt="Star History Chart" src="https://star-history.dera.page/svg?repos=glowroot/glowroot&legend=bottom-right" />
+  </picture>
+</a>
+
+Chart served by [star-history.dera.page](https://star-history.dera.page/) — a token-free fork that uses public star snapshots (GitHub restricted the stargazers API in 2026).
 
 ## License
 
