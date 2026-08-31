@@ -513,6 +513,8 @@ Fase 2 (mese 2–3)        WS-4   Spring Boot starter
 
 Fase 3 (mese 4–12)       WS-9   OTel bridge
                          UI modernization (workstream non dettagliato — solo dopo demo+starter)
+
+Brainstorming (non in roadmap)   WS-11  Cursor Agent Skill — vedi §12
 ```
 
 ---
@@ -554,6 +556,143 @@ Fase 3 (mese 4–12)       WS-9   OTel bridge
 2. **Spezzare** #1186 e #1220.
 3. **Portare** case study Afea (JVM/SQL analysis che già fai) → articolo + Discussion.
 4. **Ownare** WS-4 (Spring Boot starter) e WS-8 (contenuti) — allineati al tuo profilo ops/Java.
+
+---
+
+## 12. Brainstorming — Cursor Agent Skill (WS-11)
+
+> **Stato:** idea in discussione · **2026-08-31**  
+> **Azione:** nessuna per ora. Non implementare senza accordo con Sylvere e senza WS-6 (triage) avviato.
+
+### Problema che mira a risolvere
+
+Il tracker ha ~190 issue aperte; ~68% hanno più di 3 anni. Molte non sono bug — sono supporto/config mascherato da issue. Ogni risposta “leggi la wiki” costa tempo al maintainer e lascia issue zombie.
+
+Flusso attuale (inefficiente):
+
+```
+Domanda vaga → GitHub Issue → maintainer → wiki link → issue resta aperta
+```
+
+### Proposta
+
+Skill Cursor **`glowroot`** nel repo (`.cursor/skills/glowroot/`) come **front door** per chi usa Glowroot con un agent:
+
+```
+Domanda → agent + skill → diagnosi / link wiki / pattern noto
+         ↓ (solo bug riproducibile + checklist compilata)
+       GitHub Issue
+         ↓ (solo idea nuova)
+       Discussion → Ideas
+```
+
+La wiki resta source of truth canonica. La skill è il **runtime** che applica wiki + know-how al caso concreto.
+
+### Relazione con asset già esistenti (Nicholas)
+
+| Asset | Ruolo | Overlap skill |
+|---|---|---|
+| Wiki GitHub | Doc ufficiale, lenta da aggiornare | Skill linka wiki; non la sostituisce |
+| `Analisi/TRIAGE-KNOWLEDGE.md` | Pattern da triage batch (~240 righe FAQ) | **Input principale** skill (sync in repo) |
+| `docs/issue-map/` (branch `#1197`) | Dashboard + `triaged-ids.json` | Indice umano; skill legge pattern |
+| Skill `analisi-engine` | Analisi export trace/dump **post-mortem** | Complementare: skill = pre-mortem ops/config |
+| Discussion #1195 | Accordo triage con Sylvere | Skill automatizza gate Easy/Medium |
+
+### Workflow skill (bozza)
+
+**1. Classificazione richiesta**
+
+| Tipo | Esempi | Destinazione |
+|---|---|---|
+| How-to / config | UI non si apre, H2 locked, agent.id K8s | Wiki + risposta; **no issue** |
+| Expected behavior | Breakdown ≠ entries; Service Calls vuoto su @Service | Limite plugin; **no issue** |
+| Diagnosi | CPU post-upgrade; trace senza SQL | Checklist; issue solo se riproducibile |
+| Bug | NPE, regression con steps | Issue con template |
+| Idea | OTel export, Prometheus | Discussion Ideas |
+| Trace analysis | export HTML/JSON | Delega a `analisi-engine` |
+
+**2. Gate anti-issue dummy (obbligatorio prima di suggerire Issue)**
+
+```
+□ Versione Glowroot (tag release, non “latest”)
+□ Mode: embedded | central
+□ JDK + application server
+□ -javaagent prima di -jar (se executable JAR)
+□ Log line “UI listening on …” presente o assente
+□ Pattern cercato in TRIAGE-KNOWLEDGE / issue-map
+```
+
+Se checklist incompleta → Discussion Q&A, non Issue.
+
+**3. Output standard agent**
+
+- Diagnosis (1–3 frasi)
+- Likely cause (pattern `#NNN` o wiki)
+- Actions ordinate
+- Verdict: **no issue** | **issue** (con repro) | **discussion**
+
+### Flywheel wiki ↔ skill
+
+1. Domanda nuova → skill non trova pattern → risposta + proposta patch wiki (1 paragrafo).
+2. Triage batch → aggiorna `TRIAGE-KNOWLEDGE.md` + wiki se serve.
+3. Stessa domanda → skill risponde senza GitHub.
+
+Issue **chiuse** = know-how only (protocollo già in TRIAGE-KNOWLEDGE: zero commenti, zero reopen).
+
+### Struttura file (non creata — solo design)
+
+```
+glowroot/.cursor/skills/glowroot/
+├── SKILL.md              # workflow + trigger + gate
+├── triage-patterns.md    # sync da TRIAGE-KNOWLEDGE / issue-map
+├── decision-tree.md      # embedded vs central, tab vuoti, …
+└── issue-gate.md         # template pre-issue (esportabile anche come GitHub issue template)
+```
+
+### Dove hostarla
+
+| Opzione | Pro | Contro |
+|---|---|---|
+| Project skill nel repo | Scalabile, reviewabile, differenziatore vs altri APM | Serve merge upstream |
+| Personal `~/.cursor/skills/` | Immediato, zero permessi | Solo Nicholas |
+| Entrambe | Draft personale → PR upstream | Sync da mantenere |
+
+**Preferenza indicata:** draft nel fork, menzione in README quando matura; allineamento Sylvere prima del merge upstream.
+
+### Impatto atteso (stima, non misurato)
+
+| Oggi | Con skill + gate |
+|---|---|
+| ~40% issue ≈ supporto mascherato | → Discussion o chiusura |
+| Duplicate “empty Queries / Service Calls” | → pattern `#746`, `#812`, wiki Plugin coverage gaps |
+| Issue senza versione/mode | → bloccate da checklist |
+
+Non “zero issue dummy” garantito — riduzione forte del rumore su WS-6.
+
+### Limiti onesti
+
+- Non sostituisce maintainer per merge, release, permessi GitHub.
+- Senza demo live, l’agent non prova Glowroot — resta knowledge-driven.
+- Skill invecchia se `TRIAGE-KNOWLEDGE` non si aggiorna (stesso rischio della wiki).
+- Utenti senza Cursor: esportare `issue-gate.md` come GitHub Issue template + bot checklist.
+
+### Collegamento workstream audit
+
+| WS | Rapporto con WS-11 |
+|---|---|
+| WS-6 Issue triage | Skill automatizza Easy/Medium; umano resta su Hard |
+| WS-8 Contenuti | Ogni gap skill → paragrafo wiki |
+| WS-10 PR backlog | Meno issue dummy → più bandwidth review |
+| WS-1 Demo | Skill compensa parzialmente assenza demo con checklist |
+
+### Criteri per passare da brainstorming a implementazione
+
+1. Accordo esplicito Sylvere (discussion #1195 o thread dedicato).
+2. `docs/issue-map/` + `TRIAGE-KNOWLEDGE.md` canonicali nel repo (non solo copia Analisi).
+3. WS-6 avviato (almeno 1 batch triage con pattern documentati).
+4. Issue template GitHub allineato al gate (beneficio anche senza Cursor).
+
+**Effort stimato (quando/se approvato):** 1–2 giorni draft skill + sync triage-patterns; ongoing = aggiornamento a ogni batch triage.
 
 ---
 
@@ -615,3 +754,5 @@ Ultimi run (2026-08-30): `main` → success.
 ---
 
 *Report generato per lavoro offline. Aggiornare i numeri GitHub con `gh api repos/glowroot/glowroot` prima di presentarlo esternamente.*
+
+**Changelog report:** 2026-08-31 — §12 WS-11 Cursor Agent Skill (brainstorming, no action).
