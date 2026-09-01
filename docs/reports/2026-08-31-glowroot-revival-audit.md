@@ -2,7 +2,7 @@
 
 | Campo | Valore |
 |---|---|
-| Data | 2026-08-31 |
+| Data | 2026-09-01 (aggiornato; prima edizione 2026-08-31) |
 | Autore | Nicholas Antinori (`Never-lab` / `JustKaneki`) |
 | Repo analizzato | [glowroot/glowroot](https://github.com/glowroot/glowroot) |
 | Fork di lavoro | [Never-lab/glowroot](https://github.com/Never-lab/glowroot) |
@@ -19,47 +19,61 @@ Glowroot **non è un progetto morto**. Il codice si muove, la CI passa, le relea
 - **Il sito pubblico (`glowroot.org`) mostra ancora la 0.14.0** — sei anni di distanza dal messaggio GitHub.
 - **La demo pubblica (`demo.glowroot.org`) risponde HTTP 522** — down almeno da gennaio 2025 ([#1102](https://github.com/glowroot/glowroot/issues/1102)).
 - **Maven Central è abbandonato**: ultimo artifact `org.glowroot:glowroot-agent` = `0.14.0-beta.3` (2022). Chi cerca su Maven non trova nulla di recente.
-- **Central collector quasi ignorato**: release `v0.14.7` → agent zip ~33.358 download cumulativi, central zip ~241 (**rapporto ~138:1**).
-- **Backlog issue marcio**: su 190 issue aperte campionate, **130 (>68%) hanno più di 3 anni**; solo **9 label** GitHub; triage quasi assente.
-- **Governance fantasma**: `pom.xml` elenca solo Trask Stalnaker come developer; Trask non committa più su `main`; maintainer de facto = Sylvere Richard (`nowheresly`) + commit recenti anche da te (`JustKaneki`).
-- **7 PR aperte upstream, tutte tue** — bottleneck di review/merge, non di produzione codice.
+- **Central collector quasi ignorato**: release `v0.14.7` → agent zip ~33.760 download cumulativi, central zip ~242 (**rapporto ~140:1**).
+- **Backlog issue migliorato ma ancora pesante**: **77 issue aperte** (contatore repo: 90), **44 (>57%) hanno più di 3 anni** — calo netto vs 190/68% del 31/08 (probabilmente triage batch o conteggio diverso); solo **9 label** GitHub.
+- **Governance fantasma**: `pom.xml` elenca solo Trask Stalnaker come developer; Trask non committa più su `main`; maintainer de facto = Sylvere Richard (`nowheresly`) + commit recenti da te (`Never-lab`).
+- **11 PR aperte upstream, tutte tue** — bottleneck di review/merge peggiorato; include 4 PR strategiche aperte il 31/08 (#1222 Spring Boot, #1224 Helm, #1225 Docker demo, #1226 SECURITY.md).
 - **Stack UI EOL**: AngularJS 1.7.9 (EOL 2022), Bower (deprecated), Grunt. Funziona, ma è un segnale visibile di “2018”.
 - **Zero OpenTelemetry** nel codebase. Nel 2026 questo esclude Glowroot da molti shortlist architetturali.
 
 **Verdetto:** il vantaggio competitivo reale (embedded, basso overhead, `-javaagent` in 5 minuti) **esiste ancora** ed è sottovalutato dal mercato perché onboarding, marketing, demo e ecosistema sono fermi o assenti. Non serve riscrivere Glowroot in OTel-native per crescere — serve **rendere provabile e trovabile** ciò che già funziona, poi colmare i gap ecosistema uno per uno.
 
+### Delta dal 2026-08-31 (sync fork + refresh dati)
+
+| Metrica | 2026-08-31 | 2026-09-01 | Nota |
+|---|---:|---:|---|
+| Issue aperte (API, no PR) | ~190 campionate | **77** | Calo enorme — verificare se triage massivo o metodologia diversa |
+| Issue > 3 anni (%) | 68% | **57%** | Miglioramento relativo |
+| PR aperte Never-lab | 7 | **11** | +4 PR strategiche (Spring Boot, Helm, demo Docker, SECURITY.md) |
+| `upstream/main` locale | 3 commit indietro | **allineato** | Merge completato su fork |
+| Ultimi commit `main` | mix `JustKaneki`/`Never-lab` | **`Never-lab` dominante** | Identità GitHub consolidata sui commit recenti |
+| Download agent 0.14.7 | ~33.358 | **33.760** | +402 in 1 giorno (cumulativi) |
+| Discussions | 59 | **60** | +1 |
+
+**Fork sync (2026-09-01):** `main` fast-forward a `upstream/main` (`3f697a6fa`). Merge upstream su: `docs/revival-audit-2026-08-31`, `docs/readme-product-first`, `fix/1002-*`, `feature/1206-*`, `docs/1197-*`. **Non mergeati** (cronologie divergenti): `fix/1125-virtual-thread-profiling`, `ui/jvm-environment-polish` — richiedono rebase manuale.
+
 ---
 
 ## Metodologia
 
-Dati raccolti il **2026-08-31** da:
+Dati raccolti il **2026-09-01** da:
 
 | Fonte | Cosa |
 |---|---|
-| GitHub API | stars, fork, issue, PR, release, contributor, discussions, CI |
-| Repo locale | `/home/nicholas/Scrivania/Lavoro/Glowroot` — struttura moduli, UI stack, test count, Dockerfile |
+| GitHub API (`gh api`) | stars, fork, issue, PR, release, contributor, discussions, CI |
+| Repo locale | `/data/progetti/Glowroot` — struttura moduli, UI stack, test count, Dockerfile |
 | HTTP probe | `glowroot.org`, `demo.glowroot.org` |
 | Maven Search API | presenza artifact `org.glowroot` |
 | Confronto | SkyWalking, Pinpoint, Scouter su GitHub stars |
 
-**Nota sul clone locale:** il ref `upstream/main` in locale ha solo 34 commit (ref corrotto/shallow). I dati storici commit usano **GitHub API**, non `git log` locale.
+**Nota issue count:** il contatore repo (`open_issues: 90`) include PR aperte; l'analisi età usa solo issue (`pull_request == null`) = **77**. Il report del 31/08 usava un campione diverso (190) — i numeri assoluti non sono direttamente comparabili senza verificare cosa è stato chiuso/triageato nel frattempo.
 
 ---
 
 ## 1. Numeri di riferimento
 
-### 1.1 GitHub (2026-08-31)
+### 1.1 GitHub (2026-09-01)
 
 | Metrica | Glowroot | SkyWalking | Pinpoint | Scouter |
 |---|---:|---:|---:|---:|
-| Stars | 1.356 | 24.936 | 13.860 | 2.181 |
+| Stars | 1.356 | 24.937 | 13.860 | 2.181 |
 | Fork | 337 | — | — | — |
-| Open issues (counter repo) | 204 | — | — | — |
-| Issue aperte campionate | 190 | — | — | — |
+| Open issues (counter repo) | 90 | — | — | — |
+| Issue aperte (solo issue, no PR) | 77 | — | — | — |
 | Watchers | 47 | — | — | — |
 | Contributor (API) | 30 | — | — | — |
-| Discussions totali | 59 | — | — | — |
-| PR aperte | 14 | — | — | — |
+| Discussions totali | 60 | — | — | — |
+| PR aperte (totale repo) | 14+ | — | — | — |
 | License | Apache-2.0 | Apache-2.0 | Apache-2.0 | Apache-2.0 |
 | Created | 2014-01-29 | — | — | — |
 | Last push | 2026-08-30 | — | — | — |
@@ -68,10 +82,10 @@ Dati raccolti il **2026-08-31** da:
 
 | Tag | Tipo | Data | Agent zip DL | Central zip DL |
 |---|---|---|---:|---:|
-| v0.14.8-beta.4 | pre-release | 2026-08-02 | 371 | 15 |
-| v0.14.8-beta.3 | pre-release | 2026-06-08 | 373 | 30 |
-| v0.14.7 | **stable** | 2026-05-11 | 33.358 | 241 |
-| v0.14.6 | stable | 2026-03-24 | 22.254 | — |
+| v0.14.8-beta.4 | pre-release | 2026-08-02 | 396 | 15 |
+| v0.14.8-beta.3 | pre-release | 2026-06-08 | 375 | 30 |
+| v0.14.7 | **stable** | 2026-05-11 | 33.760 | 242 |
+| v0.14.6 | stable | 2026-03-24 | 22.293 | 3.375 |
 | v0.14.5 | stable | 2026-03-08 | 1.793 | — |
 | v0.14.4 | stable | 2025-05-25 | 131.752 | — |
 | v0.14.2 | stable | 2024-04-07 | 251.303 | — |
@@ -87,7 +101,7 @@ Dati raccolti il **2026-08-31** da:
 
 | Metrica | Valore |
 |---|---|
-| File `.java` | 1.523 |
+| File `.java` | 1.195 (esclusi target) |
 | Linee Java (totale `wc -l`) | ~8.904 (esclusi target; cifra bassa perché molto codice è generato/shaded altrove nel build completo) |
 | Plugin agent | 27 |
 | File test `*Test.java` / `*IT.java` | 269 |
@@ -127,7 +141,7 @@ Dati raccolti il **2026-08-31** da:
 
 | Problema | Evidenza | Impatto |
 |---|---|---|
-| **Nessun OTel** | grep `OpenTelemetry` nel repo = 0 match | Escluso da architetture 2026 “OTel-first” |
+| **Nessun OTel** | grep `OpenTelemetry` nel repo = 0 match nel codice sorgente (6 match solo in questo report) | Escluso da architetture 2026 “OTel-first” |
 | **Maven Central fermo** | `glowroot-agent` @ `0.14.0-beta.3`, timestamp 2022 | Chi usa Maven/Gradle dependency lookup non trova Glowroot |
 | **Due agent sullo stesso JVM** | README: “Usually no” | Normale per bytecode agents, ma blocca migrazioni da altri APM |
 | **Central richiede Cassandra** | wiki + Dockerfile + issue DNS/reconnect (#1151) | Barriera ops alta; spiega il rapporto 138:1 download |
@@ -137,17 +151,17 @@ Dati raccolti il **2026-08-31** da:
 | **Perpetual beta** | 0.14.8-beta.4 latest tag; stable 0.14.7 di maggio | Team conservativi rimandano upgrade |
 | **SLF4J 1.7 + Logback 1.2** nel parent POM | `slf4j.version` 1.7.36, `logback.version` 1.2.13 | SLF4J 2.x support aggiunto nelle note release ma stack parent legacy |
 
-### 2.3 Commit recenti upstream (GitHub API, 2026-07/08)
+### 2.3 Commit recenti upstream (GitHub API, 2026-07/08/09)
 
 Autori effettivi sul branch `main`:
 
 | Autore GitHub | Nome | Commit recenti (esempi) |
 |---|---|---|
-| `JustKaneki` | (email: `nicholasantinori8@gmail.com`) | trace filters, woven LocalVariableTable, JUL NPE, health check |
-| `Sylvere Richard` | nowheresly | readiness probe Cassandra, Infinispan update |
-| `Never-lab` | Nicholas Antinori | PR mergeate (#1185, #1189, #1203) |
+| `Never-lab` | Nicholas Antinori | trace filters, woven LocalVariableTable, JUL NPE, health check, storage UI, breakdown timers |
+| `nowheresly` | Sylvere Richard | readiness probe Cassandra, Infinispan update, release 0.14.8-beta.5 |
+| `github-actions[bot]` | — | Release automation |
 
-**Trasparenza:** `JustKaneki` e `Never-lab` sono lo stesso operatore (Nicholas). I commit diretti su `main` passano da `JustKaneki`; le PR passano da `Never-lab`. Per un osservatore esterno sembra più gente di quanta ce ne sia — o confusione di identità.
+**Nota identità:** al 31/08 i commit diretti su `main` comparivano come `JustKaneki`; al 01/09 i commit recenti risultano tutti sotto `Never-lab`. Stesso operatore, identità GitHub consolidata.
 
 `trask` (4.057 commit storici): **nessun commit recente su `main`**. Il bus factor nominale (Trask) ≠ bus factor reale (Sylvere + Nicholas).
 
@@ -234,31 +248,29 @@ Glowroot compare in articoli “Best self-hosted APM 2026” come opzione **Java
 
 **Bus factor effettivo: 2.** Se Sylvere smette, il progetto torna orphan nonostante 1.356 star.
 
-### 5.2 Issue tracker — stato disastroso (numeri, non opinioni)
+### 5.2 Issue tracker — migliorato ma ancora critico
 
-| Metrica | Valore |
-|---|---|
-| Issue aperte campionate | 190 |
-| Età > 3 anni | 130 (68,4%) |
-| Età 1–3 anni | 54 (28,4%) |
-| Età < 1 anno | 6 (3,2%) |
-| Label disponibili | **9** (`bug`, `enhancement`, `regression`, `ui`, `plugin`, `wishlist`, `dependencies`, `discussion`, `awaiting feedback`) |
-| Issue senza commenti (campione) | 0 |
+| Metrica | Valore (2026-09-01) | Valore (2026-08-31) |
+|---|---:|---:|
+| Issue aperte (solo issue) | **77** | ~190 campionate |
+| Età > 3 anni | 44 (**57,1%**) | 130 (68,4%) |
+| Età 1–3 anni | 29 (37,7%) | 54 (28,4%) |
+| Età < 1 anno | 4 (5,2%) | 6 (3,2%) |
+| Label disponibili | **9** | 9 |
+| Contatore repo (`open_issues`) | 90 | 204 |
 
-**Keyword nelle issue aperte (titolo):**
+**Keyword nelle issue aperte (titolo, 2026-09-01):**
 
 | Keyword | Count |
 |---|---:|
-| central | 17 |
-| ui | 10 |
-| cassandra | 8 |
-| h2 | 4 |
-| spring boot | 3 |
-| docker | 3 |
-| kubernetes | 2 |
-| prometheus | 2 |
+| central | 4 |
+| ui | 3 |
+| cassandra | 3 |
+| spring boot | 2 |
+| prometheus | 1 |
 | virtual thread | 1 |
-| embedded | 1 |
+| security | 1 |
+| helm | 1 |
 
 **Issue recenti (< 1 anno) — segnale qualità:**
 
@@ -277,7 +289,7 @@ Glowroot compare in articoli “Best self-hosted APM 2026” come opzione **Java
 | General | 27 |
 | Q&A | 27 |
 | Ideas | 5 |
-| **Totale** | **59** |
+| **Totale** | **60** |
 
 59 discussioni totali in un progetto di 12 anni = **canale sottoutilizzato**. Il README recente (branch non mergeato) reindirizza Q&A → Discussions — direzione giusta, ma serve risposta attiva.
 
@@ -298,10 +310,14 @@ Glowroot compare in articoli “Best self-hosted APM 2026” come opzione **Java
 
 **PR mergeate da `Never-lab` (upstream):** 3 (#1185, #1189, #1203) — luglio 2026.
 
-**PR aperte da `Never-lab` (upstream, 2026-08-31):** 7
+**PR aperte da `Never-lab` (upstream, 2026-09-01):** 11
 
 | # | Titolo | Data |
 |---|---|---|
+| 1226 | SECURITY.md reporting policy | 2026-08-31 |
+| 1225 | Local Docker demo (facsimile traffic) | 2026-08-31 |
+| 1224 | Official glowroot-central Helm chart | 2026-08-31 |
+| 1222 | Spring Boot starter marker + attach docs | 2026-08-31 |
 | 1220 | Embedded scale stress harness + H2 index/SQL hardening | 2026-08-03 |
 | 1217 | Central delete-agent-meta CLI + Admin Storage UI | 2026-08-02 |
 | 1214 | Central JVM otherwise cascade | 2026-08-01 |
@@ -310,7 +326,7 @@ Glowroot compare in articoli “Best self-hosted APM 2026” come opzione **Java
 | 1188 | Embedded Deployment profile presets | 2026-07-18 |
 | 1186 | UI enrich: transaction charts, JVM pages | 2026-07-18 |
 
-**Lettura:** stai producendo più di quanto il maintainer riesca a revieware/mergeare. Popolarità del progetto **non può crescere** se il codice utile resta in PR aperte per settimane.
+**Lettura:** il backlog è **peggiorato in volume** (7→11) ma le 4 PR del 31/08 colpiscono direttamente WS-1/2/4/7 dell'audit — se mergeate, sbloccano demo, starter, Helm e SECURITY.md. Il rischio resta: troppe PR grandi contemporaneamente → review paralysis.
 
 ---
 
@@ -489,10 +505,10 @@ Ogni workstream ha: **obiettivo**, **output misurabile**, **owner suggerito**, *
 | Campo | Valore |
 |---|---|
 | Obiettivo | Codice mergeato > codice proposto |
-| Azione | Prioritizzare 3 PR max: #1190 (README), #1191 (virtual threads), #1188 (deployment presets) |
+| Azione | Prioritizzare 4 PR “quick wins”: #1190 (README), #1225 (demo Docker), #1222 (Spring Boot), #1226 (SECURITY.md) |
 | Split | PR grandi (#1186 UI, #1220 stress) → spezzare in PR reviewabili < 400 righe |
 | Owner | Nicholas (split) + Sylvere (review) |
-| Metrica | PR aperte < 3 |
+| Metrica | PR aperte < 5 (realistico dato volume attuale) |
 
 ---
 
@@ -521,14 +537,14 @@ Brainstorming (non in roadmap)   WS-11  Cursor Agent Skill — vedi §12
 
 ## 10. Metriche di successo (12 mesi)
 
-| Metrica | Baseline 2026-08-31 | Target 2027-08-31 | Come misurare |
+| Metrica | Baseline 2026-09-01 | Target 2027-09-01 | Come misurare |
 |---|---:|---:|---|
 | GitHub stars | 1.356 | 2.500+ | GitHub |
-| Download stable release (primi 90gg) | ~33k cumul. (0.14.7 totale) | > 5k primi 90gg nuova stable | GitHub API assets |
+| Download stable release (primi 90gg) | ~33.8k cumul. (0.14.7 totale) | > 5k primi 90gg nuova stable | GitHub API assets |
 | Demo uptime | 0% | 99% | Uptime probe |
-| Open issues | ~190 | < 100 | GitHub |
-| Issue > 3 anni (% ) | 68% | < 30% | Script |
-| PR aperte Never-lab | 7 | ≤ 2 | GitHub |
+| Open issues | ~77 | < 100 | GitHub |
+| Issue > 3 anni (%) | 57% | < 30% | Script |
+| PR aperte Never-lab | 11 | ≤ 5 | GitHub |
 | Contributor attivi/anno | 2–3 | ≥ 8 | GitHub |
 | Maven Central latest | 0.14.0-beta.3 | ≥ stable corrente | search.maven.org |
 | Menzioni blog comparativi | passiva | 3+ articoli con case study | manuale |
@@ -540,9 +556,9 @@ Brainstorming (non in roadmap)   WS-11  Cursor Agent Skill — vedi §12
 ### Cosa hai già fatto (upstream, verificato)
 
 - 3 PR mergeate (bugfix ad alta qualità): exported traces, Jackson nesting, WeakRef queue.
-- 7 PR aperte con feature docs/UI/infra — **valore alto, merge zero da 18–45 giorni**.
-- Commit diretti su `main` come `JustKaneki` (trace filters, health check, JUL NPE).
-- Branch fork `docs/readme-product-first` con README product-first e star history.
+- **11 PR aperte** con feature docs/UI/infra — valore alto, merge zero da 32–45 giorni (le più vecchie).
+- Commit diretti su `main` come `Never-lab` (trace filters, health check, storage UI, breakdown timers).
+- Branch fork `docs/readme-product-first` con README product-first, star history, diagrammi architettura — **allineato a upstream/main** (2026-09-01).
 
 ### Cosa NON conviene fare (onesto)
 
@@ -696,7 +712,7 @@ Non “zero issue dummy” garantito — riduzione forte del rumore su WS-6.
 
 ---
 
-## Appendice A — Verifica endpoint (2026-08-31)
+## Appendice A — Verifica endpoint (2026-09-01)
 
 | URL | HTTP | Nota |
 |---|---|---|
@@ -718,7 +734,7 @@ Matrix completa:
 
 Job disabilitati in `build.yml`: Checker Framework, SauceLabs cross-browser.
 
-Ultimi run (2026-08-30): `main` → success.
+Ultimi run CI (2026-09-01): `main` → success (schedule + issue_comment).
 
 ---
 
@@ -744,15 +760,20 @@ Ultimi run (2026-08-30): `main` → success.
 
 ## Appendice E — File e branch fork rilevanti
 
-| Branch fork | Contenuto |
-|---|---|
-| `docs/readme-product-first` | README modernizzato, star history, FAQ |
-| `docs/1197-issue-knowledge-map` | Mappa knowledge issue |
-| `feature/1206-adhoc-report-breakdown-timers` | Feature report |
-| `fix/1125-virtual-thread-profiling` | Virtual threads ( anche PR #1191 upstream ) |
+| Branch fork | Contenuto | Sync upstream (2026-09-01) |
+|---|---|---|
+| `docs/readme-product-first` | README modernizzato, star history, diagrammi architettura | ✅ allineato |
+| `docs/revival-audit-2026-08-31` | Questo report + merge upstream | ✅ allineato |
+| `docs/1197-issue-knowledge-map` | Mappa knowledge issue | ✅ allineato |
+| `feature/1206-adhoc-report-breakdown-timers` | Feature report breakdown timers | ✅ allineato |
+| `fix/1002-embedded-ui-init-logging` | Logging init UI embedded | ✅ allineato |
+| `fix/1125-virtual-thread-profiling` | Virtual threads (anche PR #1191 upstream) | ⚠️ cronologia divergente — rebase manuale |
+| `ui/jvm-environment-polish` | UI polish transaction/JVM | ⚠️ cronologia divergente — rebase manuale |
 
 ---
 
 *Report generato per lavoro offline. Aggiornare i numeri GitHub con `gh api repos/glowroot/glowroot` prima di presentarlo esternamente.*
 
-**Changelog report:** 2026-08-31 — §12 WS-11 Cursor Agent Skill (brainstorming, no action).
+**Changelog report:**
+- 2026-09-01 — Refresh completo post-sync fork; delta §TL;DR; issue count 77; PR backlog 11; identità commit Never-lab.
+- 2026-08-31 — §12 WS-11 Cursor Agent Skill (brainstorming, no action).
