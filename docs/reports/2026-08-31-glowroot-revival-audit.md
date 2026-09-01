@@ -171,11 +171,11 @@ Autori effettivi sul branch `main`:
 
 ### 3.1 First impression — fallisce
 
-| Touchpoint | Stato 2026-08-31 | Effetto |
+| Touchpoint | Stato 2026-09-01 | Effetto |
 |---|---|---|
 | `glowroot.org` | HTTP 200; pagina mostra download **`glowroot-0.14.0-dist.zip`** | Visitatore conclude “abbandonato” |
 | `demo.glowroot.org` | HTTP **522** (Cloudflare origin timeout) | Zero try-before-download |
-| GitHub README | Migliorato su branch `docs/readme-product-first` (**non mergeato** su upstream `main` al momento audit) | Upstream README già decente ma demo link rotto |
+| GitHub README | Migliorato su branch `docs/readme-product-first` + PR **#1190 aperta** (non mergeata) | Upstream README già decente ma demo link rotto |
 | Wayback demo | Snapshot 2023-03-25 | Insufficiente per UI moderna e feature 0.14.x |
 | Twitter `@glowroot` | linkato nel README | Canale legacy, attività non verificata |
 
@@ -772,8 +772,370 @@ Ultimi run CI (2026-09-01): `main` → success (schedule + issue_comment).
 
 ---
 
+## §13 UI stack — strategia e matrice dipendenze (2026-09-01)
+
+> **Contesto:** discussione post-audit su AngularJS / Bower / Grunt.  
+> **Verdetto:** rewrite framework = Fase 3; tooling npm+Vite = Fase 2; patch 1.7→1.8 = opzionale.
+
+### 13.1 Dimensione codebase UI
+
+| Metrica | Valore |
+|---|---|
+| File JS (`app/scripts`) | 87 |
+| Righe JS | ~16.400 |
+| Template HTML | 96 |
+| File SCSS | 18 |
+| Webdriver IT (UI-related) | ~11 classi, selettori DOM fragili |
+| Build | Bower → Grunt (concat, uglify, filerev, sass) → JAR |
+
+### 13.2 Tre livelli di intervento (recap)
+
+| Livello | Cosa | Effort | Quando |
+|---|---|---|---|
+| **L1** | AngularJS 1.7.9 → 1.8.3 + bump lib non-fork | 3–5 gg | Solo CVE / difesa |
+| **L2** | Bower→npm, Grunt→Vite; framework resta AngularJS | 2–4 sett | Dopo stable 0.14.8 + demo |
+| **L3** | Rewrite React/Vue/Angular moderno | 3–9 mesi | Roadmap esplicita maintainer |
+
+### 13.3 Matrice dipendenze (`ui/bower.json`)
+
+Legenda **Rischio bump:** 🟢 basso · 🟡 medio · 🔴 alto · ⛔ bloccato (fork/replatform)
+
+Legenda **Azione:** `keep` · `patch` · `vendor` · `replace` · `replatform`
+
+| # | Dipendenza | Versione | Provenienza | Uso Glowroot | Rischio | Azione L1 | Azione L2/L3 | Alternativa moderna | Note |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | **angular** | 1.7.9 | npm/bower upstream | Core SPA, 53 file JS | 🟡 | `patch` → 1.8.3 | `keep` fino a L3 | React / Vue / Angular 19+ | EOL gen 2022; 1.8.3 = ultima release |
+| 2 | **angular-sanitize** | 1.7.9 | upstream | `$sanitize` in template HTML | 🟡 | `patch` con angular | `keep` | DOMPurify (L3) | Bump lockstep con angular |
+| 3 | **angular-ui-router** | 1.0.20 | upstream | Routing (`routes.js`), tutte le pagine | 🟡 | `patch` → 1.0.30 | `keep` | React Router / Vue Router | API stabile; test webdriver routing |
+| 4 | **angular-ui-bootstrap4** | Morgul 3.0.5 | **fork** (Bootstrap 4) | Popover, typeahead, tooltip, template build | 🔴 | `keep` | `vendor` in repo | ng-bootstrap (Angular 2+) o Radix/shadcn (L3) | Fork per BS4; non aggiornabile trivialmente |
+| 5 | **angular-ui-codemirror** | 0.3.0 | upstream (stale) | Modulo `ui.codemirror` — config JSON/plugin | 🟡 | `keep` | `replace` wrapper | CodeMirror 6 + thin wrapper | Wrapper AngularJS 1.x abbandonato |
+| 6 | **bootstrap** | trask `#glowroot-0.13.1` | **fork Trask** | Layout grid, navbar, form admin | ⛔ | `keep` | `vendor` + documentare patch | Bootstrap 5 (breaking) | Patch CSS/JS custom; BS5 = rewrite markup |
+| 7 | **bootstrap-select** | trask `#glowroot-0.13.1` | **fork Trask** | Directive `gtSelectpicker`, agent dropdown Central | ⛔ | `keep` | `vendor` | Tom Select / Choices.js (L3) | Usato in `directives.js`, transaction/jvm navbar |
+| 8 | **bootstrap-multiselect** | trask `#glowroot-0.11.0` | **fork Trask** | Directive multiselect, report adhoc agenti | ⛔ | `keep` | `vendor` | Tom Select multi (L3) | `adhoc.js`, `directives.js` |
+| 9 | **jquery** | 3.3.1 | upstream | Flot, selectpicker, datetimepicker, DOM trace | 🟡 | `patch` → 3.7.1 | `patch` | Eliminare con L3 | CVE note su 3.3.x; accoppiato a Flot |
+| 10 | **popper.js** | 1.16.0 | upstream | Bootstrap 4 tooltip/dropdown | 🟡 | `patch` → 1.16.1 | `patch` | @popperjs/core v2 (con BS5) | Legato a bootstrap fork |
+| 11 | **flot** | trask `#glowroot-0.11.0` | **fork Trask** | **Tutti i chart** time-series (`charts.js`, transaction, JVM, report) | ⛔ | `keep` | `vendor` | Chart.js / uPlot / ECharts (L3) | Cuore UI; patch breakdown/stacked; ~6 file |
+| 12 | **flot.tooltip** | trask `#glowroot-0.9.27` | **fork Trask** | Tooltip chart hover | ⛔ | `keep` | `vendor` | Incluso in lib chart L3 | Accoppiato a flot fork |
+| 13 | **d3** | 5.7.0 | upstream | Flame graph (async load) | 🟡 | `patch` → 5.16 | `patch` | d3 v7 (L3) | Solo pagine flame graph |
+| 14 | **d3-flame-graph** | trask `#glowroot-0.11.1` | **fork Trask** | `flame-graph.js`, `trace-flame-graph.js` | ⛔ | `keep` | `vendor` | d3-flame-graph upstream + re-patch | Fork per integrazione Glowroot / performance SVG |
+| 15 | **codemirror** | 5.42.2 | upstream | Editor config avanzata, plugin instrumentation | 🟡 | `patch` → 5.65.x | `patch` | CodeMirror 6 | Mode clike + matchbrackets |
+| 16 | **handlebars** | 4.3.5 | upstream | Trace detail rendering (`handlebars-rendering.js`, export) | 🟢 | `patch` → 4.7.8 | `patch` | Template lit/html (L3) | Grunt precompile → `handlebars-templates.js` |
+| 17 | **moment** | 2.29.4 | upstream | Date/time ovunque (14 file), `#1108` 24h clock | 🟢 | `keep` (già recente) | `replace` → luxon/dayjs | luxon + Intl | moment in maintenance mode |
+| 18 | **moment-timezone** | 0.5.41 | upstream | Timezone chart range | 🟢 | `patch` → 0.5.45 | con luxon (L3) | Intl + luxon zones | |
+| 19 | **tempusdominus** | 5.1.2 | upstream | Date picker custom range (`directives.js`) | 🟡 | `patch` minor | `keep` | flatpickr (L3) | BS4 + moment dependent |
+| 20 | **sequeljs** | trask `#glowroot-0.13.4` | **fork Trask** | SQL pretty-print trace (`parser.js`, SqlPrettyPrinter) | ⛔ | `keep` | `vendor` | sql-formatter (npm) | Patch LIMIT keyword (#10f5e93ad) |
+| 21 | **clipboard.js** | trask `#glowroot-0.10.11` | **fork Trask** | Copy trace/export (`clipboard.js`) | 🟡 | `vendor` o `patch` | `replace` → clipboard@2 npm | Navigator.clipboard API | Fork minore; wrapper `gtClipboard` |
+| 22 | **spinjs** | 2.3.2 | upstream | Loading spinner (`Glowroot.showSpinner`) | 🟢 | `keep` | `replace` CSS spinner | CSS `@keyframes` | Tiny dep |
+| 23 | **fontawesome** | 5.6.3 | upstream (vendored woff) | Icone UI | 🟡 | `patch` → 5.15.4 | `patch` | Font Awesome 6 / Lucide (L3) | Font self-hosted in `index.html` |
+| 24 | **focus-visible** | 4.1.5 | upstream | A11y focus ring | 🟢 | `patch` → 5.x | `patch` | `:focus-visible` nativo (drop?) | Browser support ampio 2026 |
+
+### 13.4 Tooling build (non in bower.json)
+
+| Componente | Versione | Rischio | Azione L2 | Alternativa |
+|---|---|---|---|---|
+| **bower** | 1.8.14 | ⛔ deprecated | **Eliminare** → npm | npm/pnpm workspaces |
+| **grunt** + 15 plugin | 1.6.1 | 🔴 | **Sostituire** → Vite | esbuild + vite-plugin-static-copy |
+| **grunt-usemin** | 3.1.1 | 🔴 | Rev hash in Vite build | `vite-plugin-revision` |
+| **grunt-angular-templates** | 1.2.0 | 🟡 | `vite-plugin-html` o script prebuild | ngtemplate-loader equivalent |
+| **grunt-contrib-handlebars** | 3.0.0 | 🟡 | handlebars CLI prebuild | stesso output |
+| **jshint** | 3.2.0 | 🟡 | ESLint 9 flat config | opzionale in L2 |
+| **sass** | 1.97.3 | 🟢 | Già moderno, tenere | — |
+
+### 13.5 Priorità spike tooling (ordine suggerito)
+
+```
+Settimana spike L2:
+  1. Vendorizzare fork Trask in ui/vendor/ (documentare diff vs upstream)
+  2. npm install deps non-fork (jquery 3.7, handlebars 4.7, moment keep)
+  3. Vite build → stesso path ui/target/generated-resources/...
+  4. webdriver-tests: smoke AdminIT + BasicSmokeIT + chart page
+  5. Solo dopo verde: bump codemirror, fontawesome, focus-visible
+```
+
+**Non toccare nello spike:** flot, bootstrap fork, d3-flame-graph fork, sequeljs fork — vendorizzare as-is.
+
+### 13.6 Cosa NON migliora aggiornando lo stack
+
+| Aspettativa | Realtà |
+|---|---|
+| “Sembra moderno” agli utenti | Serve demo + screenshot, non bump patch |
+| Meno bug chart | Flot fork resta fino a L3 |
+| Contributor frontend facili | AngularJS resta fino a L3 |
+| Merge upstream più facile | Spike L2 è PR grande — spezzare |
+
+### 13.7 Collegamento workstream audit
+
+| WS | Rapporto con UI stack |
+|---|---|
+| WS-1 Demo | Screenshot UI attuale > rewrite |
+| WS-10 PR backlog | Non aprire spike L2 finché PR strategiche non mergeate |
+| WS-8 Contenuti | GIF chart/flame graph nel README |
+| Fase 3 roadmap | L3 rewrite solo con accordo Sylvere |
+
+---
+
+## Appendice F — Riepilogo fork Trask (blocchi bump)
+
+| Fork | Branch/tag | Feature Glowroot dipendente |
+|---|---|---|
+| `trask/bootstrap` | `glowroot-0.13.1` | Tema chrome classico, compat form admin |
+| `trask/flot` | `glowroot-0.11.0` | Stacked bars breakdown, response time chart (#1158) |
+| `trask/flot.tooltip` | `glowroot-0.9.27` | Tooltip custom su chart |
+| `trask/d3-flame-graph` | `glowroot-0.11.1` | Thread/trace flame graph pages |
+| `trask/bootstrap-select` | `glowroot-0.13.1` | Agent rollup dropdown Central |
+| `trask/bootstrap-multiselect` | `glowroot-0.11.0` | Multi-select report adhoc |
+| `trask/sequeljs` | `glowroot-0.13.4` | SQL pretty-print con LIMIT |
+| `trask/clipboard.js` | `glowroot-0.10.11` | Copy trace text |
+
+**Azione obbligatoria prima di qualsiasi bump fork:** `diff` fork vs upstream originale → doc in `ui/vendor/PATCHES.md`.
+
+---
+
+## §14 Storage embedded — benchmark H2, scale e limbo utenti (2026-09-01)
+
+> **Contesto:** discussione post-audit su H2 1.x vs 2.x, benchmark ufficiali, comportamento a 80 GB, utenti embedded-only che non possono usare Central.  
+> **Fonte benchmark:** [h2database.com/benchmark](https://www.h2database.com/html/benchmark.html) — DB **piccolo**, workload sintetico CRUD. **Non** misura Glowroot né DB da decine di GB.
+
+### 14.1 Cosa misurano (e cosa no) i benchmark H2
+
+| | Benchmark H2.com | Glowroot embedded reale |
+|---|---|---|
+| Dimensione DB | pochi MB | default ~**2,5 GB capped** + `data.mv.db` metadata |
+| Workload | CRUD sintetico | trace write + rollup + delete retention + query UI |
+| JVM | dedicata al bench | **condivisa con app monitorata** |
+| H2 1.x vs 2.x | non confrontati nel bench | salto 1.3.176→2.2.224; #1180 CPU/GC ↑ in prod per alcuni |
+| 80 GB | **non testato** | fuori design default; possibile solo con misconfig |
+
+**Verdetto:** i benchmark dimostrano che H2 embedded è **veloce su DB piccoli**. Non dimostrano che H2 regge **80 GB** né che l'upgrade 1→2 sia un “salto enorme” misurabile con questi numeri.
+
+### 14.2 Grafici — Embedded (H2 vs HSQLDB vs Derby)
+
+Valori in **ms** (più basso = meglio), salvo §14.2.3.
+
+#### Simple ops
+
+```mermaid
+xychart-beta
+    title "Embedded — Simple ops (ms)"
+    x-axis ["Init", "Query rand", "Query seq", "Update seq", "Delete seq"]
+    y-axis "ms" 0 --> 10000
+    bar "H2" [102, 513, 1344, 1642, 1697]
+    bar "HSQLDB" [125, 653, 2210, 3040, 2310]
+    bar "Derby" [106, 2035, 7665, 7034, 9981]
+```
+
+#### Bench A / B / C — Transactions
+
+```mermaid
+xychart-beta
+    title "Embedded — Bench Transactions (ms)"
+    x-axis ["BenchA", "BenchB", "BenchC"]
+    y-axis "ms" 0 --> 18000
+    bar "H2" [1369, 3412, 17321]
+    bar "HSQLDB" [2629, 3168, 7422]
+    bar "Derby" [4987, 1515, 2735]
+```
+
+#### Memoria (MB)
+
+```mermaid
+xychart-beta
+    title "Embedded — Memory usage (MB)"
+    x-axis ["Simple", "BenchA", "BenchB", "BenchC"]
+    y-axis "MB" 0 --> 40
+    bar "H2" [18, 12, 14, 19]
+    bar "HSQLDB" [15, 15, 10, 34]
+    bar "Derby" [13, 9, 10, 11]
+```
+
+#### Throughput aggregato (#/s — più alto = meglio)
+
+```mermaid
+xychart-beta
+    title "Embedded — Statements/sec"
+    x-axis ["H2", "HSQLDB", "Derby"]
+    y-axis "#/s" 0 --> 17000
+    bar [15808, 8554, 4535]
+```
+
+### 14.3 Grafici — Client-Server (H2 vs HSQLDB vs Derby vs PostgreSQL vs MySQL)
+
+#### Simple ops
+
+```mermaid
+xychart-beta
+    title "Client-Server — Simple ops (ms)"
+    x-axis ["Init", "Query rand", "Query seq", "Update seq", "Delete seq"]
+    y-axis "ms" 0 --> 150000
+    bar "H2" [279, 482, 3365, 9878, 13056]
+    bar "HSQLDB" [894, 1598, 6491, 23565, 28584]
+    bar "Derby" [805, 4147, 12959, 31418, 43955]
+    bar "PostgreSQL" [547, 4089, 9356, 26113, 20985]
+    bar "MySQL" [1423, 15140, 143536, 50676, 64647]
+```
+
+#### Bench Transactions
+
+```mermaid
+xychart-beta
+    title "Client-Server — Bench Transactions (ms)"
+    x-axis ["BenchA", "BenchB", "BenchC"]
+    y-axis "ms" 0 --> 70000
+    bar "H2" [16549, 8981, 65697]
+    bar "HSQLDB" [29255, 10046, 78394]
+    bar "Derby" [28995, 19168, 128916]
+    bar "PostgreSQL" [23113, 18179, 41162]
+    bar "MySQL" [65036, 46191, 6150]
+```
+
+### 14.4 Scorecard sintetico (benchmark piccolo)
+
+| Categoria | Embedded | Client-Server |
+|---|---|---|
+| Init / cold start | 🟢 H2 vince | 🟡 PostgreSQL spesso più veloce |
+| Query random | 🟢 H2 vince | 🟢 H2 competitivo |
+| Query sequential | 🟢 H2 vince | 🔴 MySQL molto lento nel bench |
+| Update/Delete | 🟢 H2 vince | 🟢 H2/PG competitivi |
+| Throughput (#/s) | 🟢 H2 ~1,8× HSQLDB | dipende da workload |
+| Memoria JVM bench | 🟡 ~12–19 MB | 🟡 H2 leggero vs server PG separato |
+
+### 14.5 H2 1.x → 2.x in Glowroot — cosa cambia davvero
+
+| Aspetto | H2 1.3.176 (Glowroot ≤0.14.4) | H2 2.2.224 (Glowroot ≥0.14.5) |
+|---|---|---|
+| Engine | PageStore legacy | MVStore only |
+| File dati | `data.h2.db` | `data.mv.db` |
+| Migrazione file | — | **no auto-migrate** (SCRIPT/RUNSCRIPT) |
+| SQL Glowroot | `LIMIT 100`, `shutdown defrag` | `FETCH FIRST 100 ROWS ONLY`, `shutdown compact` |
+| Evidenza prod | baseline #1180 | **CPU/GC ↑** sospetto per alcuni nodi |
+| “Salto enorme” bench | N/A | **non misurato** — bench ≠ upgrade 1→2 |
+
+Il tuning applicativo (cache H2 Admin UI, compact, indici PR #1220) conta **più del brand motore** per l'esperienza utente embedded.
+
+### 14.6 Architettura storage Glowroot — default vs 80 GB
+
+Glowroot embedded è **ibrido**: H2 non contiene tutto.
+
+| Componente | Default | Ruolo |
+|---|---|---|
+| `*.capped.db` (4 rollup + trace) | **500 MB × 5 ≈ 2,5 GB** | ring buffer LZF — payload trace/rollup grossi |
+| `data.mv.db` (H2) | cresce con metadata/aggregate | indici, gauge, puntatori capped |
+| Cache H2 | **128 MB auto**, max **256 MB** | clamp esplicito (`H2CacheSize`) — protegge heap app |
+| Retention trace | 2 settimane | delete batch 100 righe |
+| Retention rollup | fino a 90 giorni | idem |
+
+**Chi arriva a ~80 GB** tipicamente: retention allargata, capped alzati molto, traffico alto, compact raro, full query text non scaduto.
+
+A quella scala (generico H2 embedded, non solo Glowroot):
+
+| Fenomeno | Effetto |
+|---|---|
+| Cache 128–256 MB su file decine di GB | cache miss continui → I/O disco |
+| GC JVM condivisa | stop-the-world → latenza UI/agent imprevedibile |
+| Compact `.mv.db` enorme | blocco lungo (single JDBC connection Glowroot) |
+| Frammentazione MVStore | spazio non reclaimato senza compact |
+| Indici profondi | query UI lente su milioni di righe |
+
+| Caratteristica | H2 embedded ~80 GB | PostgreSQL/MySQL ~80 GB |
+|---|---|---|
+| Gestione memoria | JVM + GC, cache clampata | buffer pool OS-native |
+| I/O | singolo `.mv.db`, compact pesante | WAL, background writer |
+| Ottimizzatore | basilare | statistiche, parallel query |
+| Concorrenza | 1 connection + lock globale Glowroot | isolamento transazionale maturo |
+
+### 14.7 Zone di adozione embedded — diagramma limbo
+
+```mermaid
+flowchart LR
+    subgraph zone [Zone embedded Glowroot]
+        A["0–5 GB\n(default capped + retention)\n✅ sweet spot"]
+        B["5–20 GB\n(tuning + compact)\n⚠️ ops attive"]
+        C["20–80 GB\n(H2 stress + GC)\n🔴 limbo"]
+        D["80 GB+\n🔴 fuori design"]
+    end
+
+    subgraph exit [Uscite dal limbo]
+        E["Ops Tier 0\nretention / compact / cache"]
+        F["Sharding\nN istanze piccole"]
+        G["Export metrics/traces\nWS-5 / WS-9"]
+        H["Central + Cassandra\n(costo ops alto)"]
+    end
+
+    A --> B
+    B --> C
+    C --> E
+    C --> F
+    C --> G
+    C -.->|"se possibile"| H
+    D --> F
+    D --> G
+```
+
+**Central non è l'unica uscita**, ma **embedded monolitico grande non ha soluzione first-class oggi** nel prodotto.
+
+### 14.8 Soluzioni per utenti embedded-only (Central impossibile)
+
+#### Tier 0 — Oggi, senza codice nuovo
+
+| Azione | Effetto |
+|---|---|
+| Abbassare retention trace/rollup/fullQueryText | riduce crescita H2 |
+| Mantenedere capped ~2,5 GB default (o alzarli consapevolmente) | evita sorpresa multi-GB |
+| Admin → Storage → **Compact** periodico | reclaim `.mv.db` |
+| `H2CacheSize` fixed/percent + `-Xmx` dedicato | cache prevedibile, meno OOM |
+| JVM/agent separati dalla app monitorata | meno pressione GC condivisa |
+
+#### Tier 1 — In PR fork/upstream
+
+| PR | Contributo al limbo |
+|---|---|
+| **#1188** Deployment profile presets | profili Dev/Prod — meno misconfig storage |
+| **#1220** H2 index/SQL hardening + stress harness | embedded regge più carico senza Central |
+| **#1225** Docker demo | pattern deploy isolato (educazione, non scale) |
+
+#### Tier 2 — Prodotto mancante (roadmap)
+
+| Opzione | Descrizione | Effort |
+|---|---|---|
+| **A — Storage esterno** | Agent raccoglie → export OTLP/Prometheus → Grafana/Jaeger; UI opzionale cache breve (WS-5/WS-9) | alto |
+| **B — Central senza Cassandra** | Collector + PostgreSQL (#1121 chiusa come idea) | molto alto |
+| **C — Embedded sharded** | 1 istanza Glowroot per servizio/JVM; N DB piccoli | ops (no codice) |
+| **D — Sidecar object storage** | export periodico trace → S3/MinIO | alto, non esiste |
+
+**Raccomandazione per il limbo (Central impossibile):**
+
+1. Tier 0 + merge **#1188** + **#1220** — restare embedded ma **governato** (target 0–20 GB, non 80 GB).  
+2. **Sharding operativo** — un embedded per JVM/servizio, retention corta.  
+3. **Export** verso stack esistente quando WS-5/9 esistono — Glowroot come collector, non data lake.  
+4. **Non** promettere embedded+H2 a 80 GB come scenario supportato senza Tier 2.
+
+### 14.9 Collegamento workstream audit
+
+| WS | Rapporto con §14 |
+|---|---|
+| WS-4 Spring Boot starter | onboarding embedded — retention profile docs |
+| WS-5 Prometheus export | uscita limbo senza Central |
+| WS-9 OTel bridge | trace export → backend esterno |
+| WS-10 PR backlog | prioritizzare #1188, #1220 per utenti scale |
+| §12 WS-11 skill | pattern triage “H2 locked / DB huge / compact” |
+
+### 14.10 Affermazioni — vero/falso
+
+| Affermazione | Vero? |
+|---|---|
+| H2 embedded vince benchmark su DB piccolo | ✅ |
+| H2 1→2 è il salto mostrato nei grafici §14.2–14.3 | ❌ — grafici sono H2 vs altri DB |
+| A 80 GB H2 embedded ≈ PostgreSQL | ❌ |
+| Glowroot default arriva a 80 GB | ❌ — default ~2,5 GB capped |
+| Central è l'unica via per scale | ❌ — ma embedded grande non ha path first-class |
+| Esiste via parziale senza Central | ✅ — ops + sharding + (futuro) export |
+
+---
+
 *Report generato per lavoro offline. Aggiornare i numeri GitHub con `gh api repos/glowroot/glowroot` prima di presentarlo esternamente.*
 
 **Changelog report:**
+- 2026-09-01 — §14 storage embedded: benchmark H2 (grafici), scale 80 GB, limbo utenti, Tier 0/1/2.
+- 2026-09-01 — §13 matrice dipendenze UI stack (AngularJS/Bower/Grunt/fork Trask).
 - 2026-09-01 — Refresh completo post-sync fork; delta §TL;DR; issue count 77; PR backlog 11; identità commit Never-lab.
 - 2026-08-31 — §12 WS-11 Cursor Agent Skill (brainstorming, no action).
