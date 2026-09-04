@@ -1,0 +1,190 @@
+{
+  "generated_at": "2026-09-04T12:00:00+00:00",
+  "reference_t0": "2025-09-04T12:00:00+00:00",
+  "previous_window_start": "2024-09-04T12:00:00+00:00",
+  "repo": {
+    "full_name": "glowroot/glowroot",
+    "stars": 1356,
+    "forks": 337,
+    "watchers": 47,
+    "open_issues_github_counter": 88,
+    "pushed_at": "2026-09-03T20:06:42Z",
+    "created_at": "2014-01-29T05:25:58Z"
+  },
+  "stock_issues": {
+    "now": {
+      "open": 75,
+      "closed": 902,
+      "total": 977,
+      "closed_pct": 92.3
+    },
+    "t0_365d_ago": {
+      "open": 281,
+      "closed": 654,
+      "total": 935,
+      "closed_pct": 69.9
+    },
+    "delta_open": -206,
+    "delta_open_pct": -73.3
+  },
+  "flow_windows": {
+    "last_365d": {
+      "created": 42,
+      "closed": 248,
+      "net_open_change_approx": -206
+    },
+    "prev_365d": {
+      "created": 33,
+      "closed": 3,
+      "net_open_change_approx": 30
+    },
+    "created_delta": 9,
+    "closed_delta": 245
+  },
+  "prs": {
+    "open_now": 13,
+    "created_last365": 38,
+    "created_prev365": 6,
+    "merged_last365": 6,
+    "merged_prev365": 2
+  },
+  "time_to_close_days": {
+    "last_365d_closed_sample": {
+      "n": 248,
+      "median": 1838.5644560185185,
+      "mean": 1644.7598007205795,
+      "p90": 2545.285648148148
+    },
+    "prev_365d_closed_sample": {
+      "n": 3,
+      "median": 13.981458333333334,
+      "mean": 83.02229166666667,
+      "p90": 13.981458333333334
+    },
+    "note": "Includes backlog closes (old issues closed recently inflate median)."
+  },
+  "open_issue_age_days_now": {
+    "n": 75,
+    "median": 1025.8519791666668,
+    "mean": 1318.90193904321,
+    "p90": 2747.107407407407
+  },
+  "first_response_hours": {
+    "sample_created_last365": {
+      "n": 15,
+      "median": 21.648333333333333,
+      "mean": 364.8189259259259,
+      "p90": 771.0202777777777
+    },
+    "sample_created_prev365": {
+      "n": 32,
+      "median": 8311.028472222222,
+      "mean": 7995.052335069444,
+      "p90": 14674.946944444444
+    },
+    "note": "First non-author human comment; sample of up to 35 issues/window; issues with no reply excluded."
+  },
+  "commits": {
+    "last365": 185,
+    "prev365": 34
+  },
+  "open_labels_top": [
+    [
+      "enhancement",
+      35
+    ],
+    [
+      "bug",
+      19
+    ],
+    [
+      "awaiting feedback",
+      10
+    ],
+    [
+      "plugin",
+      10
+    ],
+    [
+      "ui",
+      5
+    ],
+    [
+      "discussion",
+      4
+    ],
+    [
+      "wishlist",
+      2
+    ],
+    [
+      "regression",
+      1
+    ]
+  ],
+  "opendigger": {
+    "issues_new_2023": 57,
+    "issues_new_2024": 48,
+    "issues_closed_2023": 28,
+    "issues_closed_2024": 18,
+    "issue_age_avg_2023": 173,
+    "issue_age_avg_2024": null,
+    "openrank_2023": 45.15,
+    "openrank_2024": 29.59,
+    "note": "OpenDigger yearly series currently ends ~2024; use for longer-term backdrop only."
+  },
+  "participation_last52_weeks": [
+    2,
+    0,
+    0,
+    0,
+    0,
+    6,
+    0,
+    0,
+    0,
+    4,
+    9,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    2,
+    0,
+    12,
+    28,
+    12,
+    6,
+    18,
+    5,
+    2,
+    0,
+    4,
+    4,
+    3,
+    0,
+    4,
+    0,
+    0,
+    0,
+    15,
+    0,
+    0,
+    0,
+    0,
+    0,
+    20,
+    5,
+    15,
+    2,
+    0,
+    0,
+    4
+  ]
+}
