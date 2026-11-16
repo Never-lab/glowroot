@@ -4,7 +4,15 @@
  * Backend: GET /backend/{transaction|error}/points
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentProps,
+  type ReactNode,
+} from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTransaction } from '../../contexts/TransactionContext'
 import { useAgent } from '../../contexts/AgentContext'
@@ -80,6 +88,21 @@ const filterControlClass =
   'h-7 rounded-none border-0 border-b border-gray-300 bg-transparent px-1 text-xs shadow-none ' +
   'hover:border-gray-400 focus-visible:border-b-blue-500 focus-visible:ring-0 focus-visible:outline-none'
 
+/** Native select: kill OS box; chevron via backgroundImage style (avoids twMerge bg-* clash) */
+const filterSelectClass =
+  filterControlClass + ' appearance-none cursor-pointer pr-5 bg-no-repeat'
+
+const FILTER_SELECT_CHEVRON =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")"
+
+const filterSelectChevronStyle = {
+  backgroundImage: FILTER_SELECT_CHEVRON,
+  backgroundPosition: 'right 1px center',
+  backgroundSize: '10px 10px',
+  backgroundColor: 'transparent',
+  backgroundRepeat: 'no-repeat',
+} as const
+
 function SlimFilterRow({
   label,
   htmlFor,
@@ -99,12 +122,27 @@ function SlimFilterRow({
   )
 }
 
+function FilterSelect({
+  className,
+  style,
+  ...props
+}: ComponentProps<typeof Select>) {
+  return (
+    <Select
+      {...props}
+      className={cn(filterSelectClass, className)}
+      style={{ ...filterSelectChevronStyle, ...style }}
+    />
+  )
+}
+
 function TextComparatorField({
   id,
   comparator,
   onComparatorChange,
   value,
   onValueChange,
+  comparatorAriaLabel,
   comparators = TEXT_COMPARATORS,
 }: {
   id: string
@@ -112,13 +150,14 @@ function TextComparatorField({
   onComparatorChange: (value: string) => void
   value: string
   onValueChange: (value: string) => void
+  comparatorAriaLabel: string
   comparators?: Array<{ value: string; label: string }>
 }) {
   return (
     <div className="flex max-w-[28em] items-center gap-1.5">
-      <Select
-        aria-label="Comparator"
-        className={cn(filterControlClass, 'w-[8.75rem] shrink-0')}
+      <FilterSelect
+        aria-label={comparatorAriaLabel}
+        className="w-[8.75rem] shrink-0"
         value={comparator}
         onChange={(e) => onComparatorChange(e.target.value)}
       >
@@ -127,7 +166,7 @@ function TextComparatorField({
             {c.label}
           </option>
         ))}
-      </Select>
+      </FilterSelect>
       <Input
         id={id}
         className={cn(filterControlClass, 'min-w-0 flex-1')}
@@ -158,8 +197,15 @@ const DEFAULT_FILTER: TraceFilterCriteria = {
 function parseFilterFromParams(params: URLSearchParams): TraceFilterCriteria {
   const lowParam = params.get('duration-millis-low') ?? ''
   const highParam = params.get('duration-millis-high') ?? ''
+  // Mirror classic traces.js: Number(x) || 0 / undefined — "0" is not a real bound
+  const lowNum = Number(lowParam) || 0
+  const highNum = highParam === '' ? undefined : Number(highParam) || undefined
   const durationComparator: 'greater' | 'less' | 'between' =
-    lowParam && highParam ? 'between' : highParam ? 'less' : 'greater'
+    lowNum !== 0 && highNum !== undefined
+      ? 'between'
+      : highNum !== undefined
+        ? 'less'
+        : 'greater'
   const limitRaw = Number(params.get('limit'))
   return {
     durationComparator,
@@ -365,13 +411,16 @@ export function TransactionTracesPage({
     setSearchParams(() => {
       // Read live window.location.search so same-tick updates from useChartRange (from/to/last) are preserved
       const next = new URLSearchParams(window.location.search)
-      if (criteria.durationComparator !== 'less' && criteria.durationLow.trim() !== '') {
-        next.set('duration-millis-low', criteria.durationLow.trim())
+      // Classic only writes duration params when Number(value) is truthy (so "0" is omitted)
+      const low = criteria.durationLow.trim()
+      const high = criteria.durationHigh.trim()
+      if (criteria.durationComparator !== 'less' && low !== '' && Number(low)) {
+        next.set('duration-millis-low', low)
       } else {
         next.delete('duration-millis-low')
       }
-      if (criteria.durationComparator !== 'greater' && criteria.durationHigh.trim() !== '') {
-        next.set('duration-millis-high', criteria.durationHigh.trim())
+      if (criteria.durationComparator !== 'greater' && high !== '' && Number(high)) {
+        next.set('duration-millis-high', high)
       } else {
         next.delete('duration-millis-high')
       }
@@ -590,9 +639,9 @@ export function TransactionTracesPage({
           }
         >
           <div className="flex max-w-[32em] flex-wrap items-center gap-1.5">
-            <Select
+            <FilterSelect
               aria-label="Response time comparator"
-              className={cn(filterControlClass, 'w-[8.75rem] shrink-0')}
+              className="w-[8.75rem] shrink-0"
               value={draft.durationComparator}
               onChange={(e) => {
                 const nextComp = e.target.value as 'greater' | 'less' | 'between'
@@ -610,7 +659,7 @@ export function TransactionTracesPage({
                   {c.label}
                 </option>
               ))}
-            </Select>
+            </FilterSelect>
             {(draft.durationComparator === 'greater' ||
               draft.durationComparator === 'between') && (
               <Input
@@ -651,6 +700,7 @@ export function TransactionTracesPage({
         <SlimFilterRow label="Headline/URL" htmlFor="searchHeadline">
           <TextComparatorField
             id="searchHeadline"
+            comparatorAriaLabel="Headline/URL comparator"
             comparator={draft.headlineComparator}
             onComparatorChange={(headlineComparator) =>
               setDraft((prev) => ({ ...prev, headlineComparator }))
@@ -664,6 +714,7 @@ export function TransactionTracesPage({
           <SlimFilterRow label="Error" htmlFor="searchErrorMessage">
             <TextComparatorField
               id="searchErrorMessage"
+              comparatorAriaLabel="Error message comparator"
               comparator={draft.errorMessageComparator}
               onComparatorChange={(errorMessageComparator) =>
                 setDraft((prev) => ({ ...prev, errorMessageComparator }))
@@ -679,6 +730,7 @@ export function TransactionTracesPage({
         <SlimFilterRow label="User" htmlFor="searchUser">
           <TextComparatorField
             id="searchUser"
+            comparatorAriaLabel="User comparator"
             comparator={draft.userComparator}
             onComparatorChange={(userComparator) =>
               setDraft((prev) => ({ ...prev, userComparator }))
@@ -691,9 +743,9 @@ export function TransactionTracesPage({
         {(traceAttributeNames.length > 0 || draft.attributeName || draft.attributeValue) && (
           <>
             <SlimFilterRow label="Attribute name" htmlFor="searchAttributeName">
-              <Select
+              <FilterSelect
                 id="searchAttributeName"
-                className={cn(filterControlClass, 'max-w-[28em]')}
+                className="max-w-[28em]"
                 value={draft.attributeName}
                 onChange={(e) =>
                   setDraft((prev) => ({ ...prev, attributeName: e.target.value }))
@@ -708,11 +760,12 @@ export function TransactionTracesPage({
                     {name}
                   </option>
                 ))}
-              </Select>
+              </FilterSelect>
             </SlimFilterRow>
             <SlimFilterRow label="Attribute value" htmlFor="searchAttributeValue">
               <TextComparatorField
                 id="searchAttributeValue"
+                comparatorAriaLabel="Attribute value comparator"
                 comparator={draft.attributeValueComparator}
                 onComparatorChange={(attributeValueComparator) =>
                   setDraft((prev) => ({ ...prev, attributeValueComparator }))
@@ -727,9 +780,9 @@ export function TransactionTracesPage({
         )}
 
         <SlimFilterRow label="Result limit" htmlFor="searchLimit">
-          <Select
+          <FilterSelect
             id="searchLimit"
-            className={cn(filterControlClass, 'w-24')}
+            className="w-24"
             value={draft.limit}
             onChange={(e) =>
               setDraft((prev) => ({ ...prev, limit: Number(e.target.value) || 500 }))
@@ -740,12 +793,14 @@ export function TransactionTracesPage({
                 {l.toLocaleString()}
               </option>
             ))}
-          </Select>
+          </FilterSelect>
         </SlimFilterRow>
 
         {filterError && (
           <div className="grid grid-cols-[8.5rem_minmax(0,1fr)] gap-x-3">
-            <div className="col-start-2 text-xs text-red-600">{filterError}</div>
+            <div className="col-start-2 text-xs text-red-600" role="alert">
+              {filterError}
+            </div>
           </div>
         )}
 
